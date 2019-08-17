@@ -50,7 +50,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('/feed/posts')
+    fetch('/feed/posts?page='+page)
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch posts.');
@@ -105,19 +105,23 @@ class Feed extends Component {
     this.setState({
       editLoading: true
     });
-    // Set up data (with image!)
+    
+    const formData  = new FormData();
+    console.log('Post Data =====> ',postData);
+    formData.append('title',postData.title);
+    formData.append('content' , postData.content);
+    if(postData.image) {
+      formData.append('image' , postData.image);
+    }
+    formData.append('creator' , postData.creator);
     let url = '/feed/post';
     if (this.state.editPost) {
-      url = 'URL';
+      url = '/feed/post/'+this.state.editPost._id;
     }
-    console.log('Sending post data',postData);
+
     fetch(url , {
-      method:'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body:JSON.stringify(postData)
+      method:this.state.editPost ? 'PUT' : 'POST',
+      body:formData
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
@@ -132,6 +136,7 @@ class Feed extends Component {
           title: resData.post.title,
           content: resData.post.content,
           creator: resData.post.creator,
+          imageUrl:resData.post.imageUrl,
           createdAt: resData.post.createdAt
         };
         this.setState(prevState => {
@@ -169,9 +174,11 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch('URL')
+    fetch('/feed/post/'+postId , {
+      method:'DELETE'
+    })
       .then(res => {
-        if (res.status !== 200 && res.status !== 201) {
+        if (res.status !== 200 && res.status !== 201 && res.status !== 202) {
           throw new Error('Deleting a post failed!');
         }
         return res.json();

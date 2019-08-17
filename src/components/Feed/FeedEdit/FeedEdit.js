@@ -50,7 +50,7 @@ class FeedEdit extends Component {
         },
         image: {
           ...prevState.postForm.image,
-          value: this.props.selectedPost.imagePath,
+          value: this.props.selectedPost.imageUrl,
           valid: true
         },
         content: {
@@ -59,7 +59,7 @@ class FeedEdit extends Component {
           valid: true
         }
       };
-      this.setState({ postForm: postForm, formIsValid: true });
+      this.setState({ postForm: postForm, formIsValid: true ,imagePreview: this.props.selectedPost.imageUrl});
     }
   }
 
