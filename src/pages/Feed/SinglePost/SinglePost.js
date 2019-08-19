@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-
+import path from 'path';
 import Image from '../../../components/Image/Image';
 import './SinglePost.css';
 
@@ -41,6 +41,7 @@ class SinglePost extends Component {
   }
 
   render() {
+    const normalizeUrl = this.state.image.replace('\\' , path.sep);
     return (
       <section className="single-post">
         <h1>{this.state.title}</h1>
@@ -48,7 +49,7 @@ class SinglePost extends Component {
           Created by {this.state.author} on {this.state.date}
         </h2>
         <div className="single-post__image">
-          <Image contain imageUrl={this.state.image} />
+          <Image contain imageUrl={normalizeUrl} />
         </div>
         <p>{this.state.content}</p>
       </section>

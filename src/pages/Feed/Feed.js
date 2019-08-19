@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react';
-
+import path from 'path';
+import openSocket from 'socket.io-client';
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
 import FeedEdit from '../../components/Feed/FeedEdit/FeedEdit';
@@ -39,8 +40,51 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
+
+    const socket = openSocket.connect('/');
+    socket.on('post' , data => {
+      console.log('POst created ' , data);
+      if(data.action === 'create') {
+        this.addPost(data.post);
+      }
+      else if(data.action === 'update') {
+        this.updatePost(data.post);
+      }
+      else if(data.action === 'delete') {
+        this.loadPosts();
+      }
+    })
+
   }
 
+  addPost = post => {
+     this.setState( prevState => {
+       const updatedPost = [...prevState.posts];
+       updatedPost.unshift(post);
+       return {
+         posts: updatedPost,
+         totalPosts: prevState.totalPosts + 1
+       }
+     });
+       
+  }
+
+  updatePost = post => {
+    this.setState(prevState => {
+      let updatedPosts = [...prevState.posts];
+        const postIndex = prevState.posts.findIndex(
+          p => p._id === post._id
+        );
+        updatedPosts[postIndex] = post;
+      return {
+        posts: updatedPosts,
+        isEditing: false,
+        editPost: null,
+        editLoading: false
+      };
+    });
+  }
+   
   loadPosts = direction => {
     if (direction) {
       this.setState({ postsLoading: true, posts: [] });
@@ -150,27 +194,8 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log('Got reponce as ',resData);
-        const post = {
-          _id: resData.post._id,
-          title: resData.post.title,
-          content: resData.post.content,
-          creator: resData.post.creator,
-          imageUrl:resData.post.imageUrl,
-          createdAt: resData.post.createdAt
-        };
         this.setState(prevState => {
-          let updatedPosts = [...prevState.posts];
-          if (prevState.editPost) {
-            const postIndex = prevState.posts.findIndex(
-              p => p._id === prevState.editPost._id
-            );
-            updatedPosts[postIndex] = post;
-          } else if (prevState.posts.length < 2) {
-            updatedPosts = prevState.posts.concat(post);
-          }
           return {
-            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
@@ -227,6 +252,7 @@ class Feed extends Component {
   };
 
   render() {
+
     return (
       <Fragment>
         <ErrorHandler error={this.state.error} onHandle={this.errorHandler} />
@@ -272,19 +298,21 @@ class Feed extends Component {
               lastPage={Math.ceil(this.state.totalPosts / 2)}
               currentPage={this.state.postPage}
             >
-              {this.state.posts.map(post => (
-                <Post
+              {this.state.posts.map(post => {
+                const normalizeUrl = post.imageUrl.replace('\\' , path.sep);
+                
+                return <Post
                   key={post._id}
                   id={post._id}
                   author={post.creator.name}
                   date={new Date(post.createdAt).toLocaleDateString('en-US')}
                   title={post.title}
-                  image={post.imageUrl}
+                  image={normalizeUrl}
                   content={post.content}
                   onStartEdit={this.startEditPostHandler.bind(this, post._id)}
                   onDelete={this.deletePostHandler.bind(this, post._id)}
                 />
-              ))}
+               })}
             </Paginator>
           )}
         </section>
